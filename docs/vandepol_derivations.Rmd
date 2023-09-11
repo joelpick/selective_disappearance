@@ -1,0 +1,42 @@
+---
+title: Deriving expected slopes when using Van de Pol and Wright method for age
+author: Joel Pick
+output: html_document
+---
+<!-- this make equation number work? -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+
+From Van de Pol & Verhulst:
+
+\begin{equation} \label{eq:vdp_V}
+y_{ij} - \beta_{01} + \beta_a a_{ij} + beta_f f_j + \beta_l l_j + \ e_{ij} \\
+\end{equation}
+
+$f$ refers to age at first reproduction (or appearance in the dataset), and $l$ refers to longevity, or age at last reproduction (disappearance from dataset). These terms are meant to represent the *additional* effect of selection appearance or disappearance (respectively).
+
+Van de Pol and Wright provides equation to separate within and among subject effects. Although not designed for this use, they has been used in the context of age. The relevant equation from this paper is
+
+\begin{equation} \label{eq:vdp_W1}
+y_{ij} - \beta_{02} + \beta_w (a_{ij} - \bar{a_{j}}) + \beta_b \bar{a_{j}} + e_{ij}
+\end{equation}
+
+which can be rearraged as 
+
+\begin{equation} \label{eq:vdp_W2}
+y_{ij} - \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \bar{a_{j}} + e_{ij}
+\end{equation}
+
+It would be useful to know how these different parameters relate to each other across the two methods, so that we know how to interpret the coefficients from the van de Pol and Wright method in the context of age.
+
+Equation $\eqref{eq:vdp_V}$ and $\eqref{eq:vdp_W2}$ resemble each other in that they both have age and some other per individual description of overall/among individual age. Assuming that an individual is observed once at every age from $f$ to $l$, then 
+
+
+
+
+
+
