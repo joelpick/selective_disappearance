@@ -11,10 +11,12 @@ MathJax.Hub.Config({
 </script>
 
 
+# Simple comparison of the two methods
+
 From Van de Pol & Verhulst:
 
 \begin{equation} \label{eq:vdp_V}
-y_{ij} - \beta_{01} + \beta_a a_{ij} + beta_f f_j + \beta_l l_j + \ e_{ij} \\
+y_{ij} = \beta_{01} + \beta_a a_{ij} + \beta_f f_j + \beta_l l_j + \ e_{ij} \\
 \end{equation}
 
 $f$ refers to age at first reproduction (or appearance in the dataset), and $l$ refers to longevity, or age at last reproduction (disappearance from dataset). These terms are meant to represent the *additional* effect of selection appearance or disappearance (respectively).
@@ -22,21 +24,254 @@ $f$ refers to age at first reproduction (or appearance in the dataset), and $l$ 
 Van de Pol and Wright provides equation to separate within and among subject effects. Although not designed for this use, they has been used in the context of age. The relevant equation from this paper is
 
 \begin{equation} \label{eq:vdp_W1}
-y_{ij} - \beta_{02} + \beta_w (a_{ij} - \bar{a_{j}}) + \beta_b \bar{a_{j}} + e_{ij}
+y_{ij} = \beta_{02} + \beta_w (a_{ij} - \bar{a_{j}}) + \beta_b \bar{a_{j}} + e_{ij}
 \end{equation}
 
 which can be rearraged as 
 
 \begin{equation} \label{eq:vdp_W2}
-y_{ij} - \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \bar{a_{j}} + e_{ij}
+y_{ij} = \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \bar{a_{j}} + e_{ij}
 \end{equation}
 
 It would be useful to know how these different parameters relate to each other across the two methods, so that we know how to interpret the coefficients from the van de Pol and Wright method in the context of age.
 
-Equation $\eqref{eq:vdp_V}$ and $\eqref{eq:vdp_W2}$ resemble each other in that they both have age and some other per individual description of overall/among individual age. Assuming that an individual is observed once at every age from $f$ to $l$, then 
+Equations $\eqref{eq:vdp_V}$ and $\eqref{eq:vdp_W2}$ resemble each other in that they both have age and some other per individual description of overall/among individual age. Assuming that an individual is observed once at every age from $f$ to $l$, then 
+
+\begin{equation} \label{eq:mean_age}
+\bar{a_{j}} = \frac{f_j + l_j}{2}
+\end{equation}
+
+Substituting this into equation $\eqref{eq:vdp_W2}$ gives
+
+\begin{equation} \label{eq:mix}
+y_{ij} = \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \frac{f_j + l_j}{2} + e_{ij}
+\end{equation}
+
+As a first step lets assume there is no variation in AFR and all indidivuals are observed from age 1. we can then arrange equation $\eqref{eq:mix}$ as 
+
+\begin{equation} \label{eq:mix2}
+y_{ij} = \beta_{02} + \frac{(\beta_b-\beta_w)}{2} + \beta_w a_{ij} +  \frac{(\beta_b-\beta_w)}{2} l_j + e_{ij}
+\end{equation}
+
+This shows how the coefficients in equations $\eqref{eq:vdp_V}$ and $\eqref{eq:vdp_W2}$ link to each other
+
+\begin{align}
+\beta_{01} = & \beta_{02} + \frac{(\beta_b-\beta_w)}{2}\\
+\beta_a = & \beta_w\\
+\beta_l = & \frac{(\beta_b-\beta_w)}{2} \label{eq:beta_l}
+\end{align}
+
+We may want to think about this in terms of how the van de Pol & Wright equation link to the Van de Pol & Verhulst ones. First the coefficients linked with either  $(a_{ij} - \bar{a_{j}})$ or $a_{ij}$ (i.e. $\beta_w$ and $\beta_a$) are equivalent in all equations.
+We can then rearrange these to show that in equation $\eqref{eq:vdp_W1}$ $\beta_b = 2\beta_l + \beta_a$ and in equation $\eqref{eq:vdp_W2}$ $(\beta_b-\beta_w) = 2\beta_l$
+
+This comparison highlights that the selective disappearance term in  equation $\eqref{eq:vdp_V}$ is the *additional* effect of selective disappearance. Equally, $\beta_b$ in equation $\eqref{eq:vdp_W1}$ cannot be interpreted in the same way as $\beta_l$ in equation $\eqref{eq:vdp_V}$ (we need to see how often this is done).
+
+## Demonstrating this with simulations 
+
+```{r}
+
+## simulate geometrically distributed lifespans
+lifespans <- rgeom(1000,0.3)+1
+
+## make into long format
+dat <- data.frame(
+	id=rep(1:1000,lifespans),
+	age=c(sapply(lifespans, function(x) 1:x),recursive=TRUE),
+	longevity = rep(lifespans,lifespans)
+)
+
+## simulate phenotype
+dat$y <- dat$age*-0.1 + rnorm(nrow(dat),0,2)
+
+## generate mean age and age deviation
+age_bar <- tapply(dat$age,dat$id,mean)
+dat$age_bar <- age_bar[match(dat$id,names(age_bar))]
+dat$age_dev <- dat$age - dat$age_bar
+
+mod_l<-coef(lm(y~age+longevity,dat))
+mod_c<-coef(lm(y~age_dev+age_bar,dat))
+mod_c2<-coef(lm(y~age+age_bar,dat))
+rbind(mod_l,mod_c,mod_c2)
+
+```
+
+From the van de Pol and Verhulst model (mod_l) we can get back the coefficents for the other models
+
+```{r}
+##  mod_c and mod_c2 intercept
+mod_l[1] - mod_l[3]
+
+##  mod_c mean age slope
+mod_l[3]*2 + mod_l[2]
+
+## mod_c2 mean age slope
+mod_l[3]*2
+
+```
+
+This shows that the coefficients for selective disappearance from equation $\eqref{eq:vdp_V}$, can be quite different from the effect associated with mean age in equation $\eqref{eq:vdp_W1}$
+
+# Incorporating both selective appearance and disappearance
+
+The above applies if there is only selective appearance or disappearance, but if there is both, then it is more complicated. In this case, the mean age effect is trying to capture the variance explained by $\beta_f f_j + \beta_l l_j$.
+
+What the mean age term captures is now linked to the covariance between mean age and $\beta_f f_j + \beta_l l_j$. We can think about this in terms of a missing predictor; the coefficient for $x_1$ when $x_2$ is missing ($\hat{\beta_{1}}$) is
+
+\begin{equation} \label{eq:missing}
+\hat{\beta_{1}} = \beta_{1} + \beta_{2} \frac{cov(x_1,x_2)}{var(x_1)}
+\end{equation}
+
+Assuming there is no independent effect of mean age over that of FR and LR ($\beta_{\bar{a}} = 0$), then the mean age effect in equation $\eqref{eq:vdp_W2}$ is
+
+\begin{equation} \label{eq:missing2}
+\hat{\beta_{\bar{a}}} = \beta_{l} \frac{cov(2\bar{a},l)}{var(\bar{a})} + \beta_{f} \frac{cov(\bar{a},f)}{var(\bar{a})}
+\end{equation}
+
+Substituting in equation $\eqref{eq:mean_age}$, and rearranging gives:
+\begin{equation} \label{eq:missing3}
+\hat{\beta_{\bar{a}}} = \beta_{l} \frac{cov(\frac{f + l}{2},l)}{var(\frac{f + l}{2})} + \beta_{f} \frac{cov(\frac{f + l}{2},f)}{var(\frac{f + l}{2})}
+\end{equation}
+
+\begin{equation} 
+\hat{\beta_{\bar{a}}} = \frac{\frac{1}{2}\beta_{l} cov(f + l,l) + \frac{1}{2}\beta_{f} cov(f + l,f)}{\frac{1}{4}var(f + l)}
+\end{equation}
+
+\begin{equation} 
+\hat{\beta_{\bar{a}}} = 2\frac{\beta_{l} (cov(f ,l) + var(l)) + \beta_{f} (cov(f,l)+ var(f))}{var(f) + var(l) + 2cov(f ,l))}
+\end{equation}
+
+\begin{equation} 
+\hat{\beta_{\bar{a}}} = 2\frac{(\beta_{l}+\beta_{f}) cov(f ,l) + \beta_{l}var(l) + \beta_{f} var(f)}{var(f) + var(l) + 2cov(f ,l))}
+\end{equation}
+
+
+This is a more general statement than above (equation $\eqref{eq:beta_l}$). If there is no variation in AFR then 
+
+\begin{equation} 
+\hat{\beta_{\bar{a}}} = \frac{ 2\beta_{l} var(l) }{var(l)} = 2\beta_{l}
+\end{equation}
+
+and we return equation $\eqref{eq:beta_l}$. If there is variation in AFR but no effect (i.e. no selective appearance), then the variance in AFR will affect the mean age effect.
+
+\begin{equation} 
+\hat{\beta_{\bar{a}}} = 2\frac{\beta_{l} cov(f ,l) + \beta_{l}var(l) }{var(f) + var(l) + 2cov(f ,l))}
+\end{equation}
+
+I think the take home here is that a mean age effect will include both selective appearance and disappearance. Again the age or age deviation effects between the three models are not affected, and so any way of modelling will give the correct within individual age effects
+
+## More demonstrations with simulations 
+
+```{r}
+n=1000
+AFR <- rpois(n,3)+1
+repro_lifespans <- rpois(n,3)+1#rgeom(n,0.3)+1
+LR <- AFR + repro_lifespans -1
+
+beta_a <- -0.1
+beta_l <- 0.2
+beta_f <- 0.5
+
+dat<-data.frame(
+	id=rep(1:n,repro_lifespans),
+	age=c(sapply(1:n, function(x) AFR[x]:LR[x]),recursive=TRUE),
+	FR = rep(AFR,repro_lifespans),
+	LR = rep(LR,repro_lifespans)
+)
+dat$y <- dat$age*beta_a + dat$LR*beta_l + dat$FR*beta_f + rnorm(nrow(dat),0,0.5)
+age_bar <- tapply(dat$age,dat$id,mean)
+dat$age_bar <- age_bar[match(dat$id,names(age_bar))]
+dat$age_dev <- dat$age - dat$age_bar
+
+mod_func <- function(formula) c(coef(lm(formula,dat)),Vr=summary(lm(formula,dat))$sigma^2)
+list(
+	mod_a = mod_func(y~age),
+	mod_l = mod_func(y~age+LR),
+	mod_f = mod_func(y~age+FR),
+	mod_fl = mod_func(y~age+FR+LR),
+	mod_c = mod_func(y~age_dev+age_bar),
+	mod_c2 = mod_func(y~age+age_bar)
+	)
+
+	mod_fl = mod_func(y~age+FR+LR)
+# derivew the mod_c2 mean age slope from mod_fl
+2* (mod_fl["LR"]*(cov(dat$FR,dat$LR)+var(dat$LR)) + mod_fl["FR"]*(cov(dat$FR,dat$LR)+var(dat$FR))) / (var(dat$LR) + var(dat$FR) + 2*cov(dat$FR,dat$LR))
+
+
+
+```
+
+# What is estimated in the age only model 
+
+From $\eqref{eq:missing}$, we can see that when 
+
+```{r}
+mod_c2 = mod_func(y~age+age_bar)
+mod_c2["age"]+ mod_c2["age_bar"]*cov(dat$age,dat$age_bar)/var(dat$age)
+mod_c2["age"]+ mod_c2["age_bar"]*var(dat$age_bar)/var(dat$age)
+
+
+## or 
+	
+	mod_fl = mod_func(y~age+FR+LR)
+mod_fl["age"]+ mod_fl["LR"]*cov(dat$age,dat$LR)/var(dat$age)+ mod_fl["FR"]*cov(dat$age,dat$FR)/var(dat$age)
+```
+
+# Van de Pol & Verhulst with a missing term
+
+It seems likely that both AFR and LR are not always modelled in systems where they both vary, and so may have an effect. It is also likely that they are correlated: as lifespan = AFR + reproductive years, AFR and lifespan would be correlated, unless AFR and reproductive years are negatively correlated. I could well imagine there being variation in AFR, and then a given survival rate post AFR. If this was the case then AFR and lifespan would be correlated. (Maybe we could look at this in a couple of systems?)
+
+From equation $\eqref{eq:missing}$, we can see that if only one appearance/disappearance term is modelled, and they are correlated, then any effect of the unmodelled term will be picked up to some extent by the modelled terms. For example, the LR slope in the absence of an unmodelled FR effect:
+
+\begin{equation} \label{eq:missing_f}
+\hat{\beta_{l}} = \beta_{l} + \beta_{f} \frac{cov(l,f)}{var(l)}
+\end{equation}
+
+As selective appearance and disappearance will both mask age effects, the age effect will not be fully corrected for if one term is missing (see mod_l and mod_f in simulated example above). 
+
+\begin{equation} \label{eq:missing_f2}
+\hat{\beta_{a}} = \beta_{a} + \beta_{f} \frac{cov(a,f)}{var(a)}
+\end{equation}
+
+NOTE: These don't work - its a more complex because one predictor is missing with two correlated predictors still in the model. 
+
+<!-- a varied at the level of the observation, and f at the level of the individual, I wonder if its to do with the covariance with mean age  -->
+
+```{r}
+n=1000
+AFR <- rpois(n,3)+1
+repro_lifespans <- rpois(n,3)+1#rgeom(n,0.3)+1
+LR <- AFR + repro_lifespans -1
+
+beta_a <- -0.1
+beta_l <- 0.2
+beta_f <- 0.5
+
+dat<-data.frame(
+	id=rep(1:n,repro_lifespans),
+	age=c(sapply(1:n, function(x) AFR[x]:LR[x]),recursive=TRUE),
+	FR = rep(AFR,repro_lifespans),
+	LR = rep(LR,repro_lifespans)
+)
+dat$y <- dat$age*beta_a + dat$LR*beta_l + dat$FR*beta_f + rnorm(nrow(dat),0,0.5)
+age_bar <- tapply(dat$age,dat$id,mean)
+dat$age_bar <- age_bar[match(dat$id,names(age_bar))]
+dat$age_dev <- dat$age - dat$age_bar
+
+
+list(
+	mod_a = mod_func(y~age),
+	mod_l = mod_func(y~age+LR),
+	mod_f = mod_func(y~age+FR),
+	mod_fl = mod_func(y~age+FR+LR)
+	)
+
+## expected LR slope when FR is not modelled 
+
+mod_fl["LR"]+ mod_fl["FR"]*cov(dat$FR,dat$LR)/var(dat$LR)
+
+```
 
 
 
 
-
-
+# When some ages are missing - sampling error in mean age effect

@@ -65,7 +65,9 @@ list(
 
 E_beta_ab <-(beta_l*(cov(dat$FR,dat$LR)+var(dat$LR)) + beta_f*(cov(dat$FR,dat$LR)+var(dat$FR))) / (var(dat$LR) + var(dat$FR) + 2*cov(dat$FR,dat$LR))
 
-2* (mod_fl["LR"]*(cov(dat$FR,dat$LR)+var(dat$LR)) + mod_fl["FR"]*(cov(dat$FR,dat$LR)+var(dat$FR))) / (var(dat$LR) + var(dat$FR) + 2*cov(dat$FR,dat$LR))
+var2 <- function(y) mean((y-mean(y))^2)
+cov2 <- function(x,y) mean((x-mean(x))*(y-mean(y)))
+2* (mod_fl["LR"]*(cov2(dat$FR,dat$LR)+var2(dat$LR)) + mod_fl["FR"]*(cov2(dat$FR,dat$LR)+var2(dat$FR))) / (var2(dat$LR) + var2(dat$FR) + 2*cov2(dat$FR,dat$LR))
 
 
 # var(dat$age_bar)
@@ -107,3 +109,12 @@ sqrt((mod_fl["LR"]^2*var(dat$LR) + mod_fl["FR"]^2*var(dat$FR) + 2*mod_fl["FR"]*m
 var2 <- function(y) mean((y-mean(y))^2)
 cov2 <- function(x,y) mean((x-mean(x))*(y-mean(y)))
 cov3 <- function(x) cov(x)*(n-1)/n
+
+
+x <- matrix(c(1,0.5,0.25,0.5,1,-0.2,0.25,-0.2,1),3,3)
+
+beta <- c(3,-2,6)
+
+diag(beta) %*% x %*% beta
+
+

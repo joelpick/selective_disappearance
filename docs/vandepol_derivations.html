@@ -173,19 +173,260 @@ MathJax.Hub.Config({
   TeX: { equationNumbers: { autoNumber: "AMS" } }
 });
 </script>
+<div id="simple-comparison-of-the-two-methods" class="section level1">
+<h1>Simple comparison of the two methods</h1>
 <p>From Van de Pol &amp; Verhulst:</p>
 <p><span class="math display">\[\begin{equation} \label{eq:vdp_V}
-y_{ij} - \beta_{01} + \beta_a a_{ij} + \beta_l l_j + e_{ij} \\
+y_{ij} = \beta_{01} + \beta_a a_{ij} + \beta_f f_j + \beta_l l_j + \ e_{ij} \\
 \end{equation}\]</span></p>
-<p>Van de Pol and Wright prodives equation to seperate within and among sibject effects. This has been used in the context of age. The important equations from this paper are</p>
+<p><span class="math inline">\(f\)</span> refers to age at first reproduction (or appearance in the dataset), and <span class="math inline">\(l\)</span> refers to longevity, or age at last reproduction (disappearance from dataset). These terms are meant to represent the <em>additional</em> effect of selection appearance or disappearance (respectively).</p>
+<p>Van de Pol and Wright provides equation to separate within and among subject effects. Although not designed for this use, they has been used in the context of age. The relevant equation from this paper is</p>
 <p><span class="math display">\[\begin{equation} \label{eq:vdp_W1}
-y_{ij} - \beta_{02} + \beta_w (a_{ij} - \bar{a_{j}}) + \beta_b \bar{a_{j}} + e_{ij}
+y_{ij} = \beta_{02} + \beta_w (a_{ij} - \bar{a_{j}}) + \beta_b \bar{a_{j}} + e_{ij}
 \end{equation}\]</span></p>
 <p>which can be rearraged as</p>
 <p><span class="math display">\[\begin{equation} \label{eq:vdp_W2}
-y_{ij} - \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \bar{a_{j}} + e_{ij}
+y_{ij} = \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \bar{a_{j}} + e_{ij}
 \end{equation}\]</span></p>
-<p>Equation <span class="math inline">\(\eqref{eq:test}\)</span> works in PDF, but does not works in HTML.</p>
+<p>It would be useful to know how these different parameters relate to each other across the two methods, so that we know how to interpret the coefficients from the van de Pol and Wright method in the context of age.</p>
+<p>Equations <span class="math inline">\(\eqref{eq:vdp_V}\)</span> and <span class="math inline">\(\eqref{eq:vdp_W2}\)</span> resemble each other in that they both have age and some other per individual description of overall/among individual age. Assuming that an individual is observed once at every age from <span class="math inline">\(f\)</span> to <span class="math inline">\(l\)</span>, then</p>
+<p><span class="math display">\[\begin{equation} \label{eq:mean_age}
+\bar{a_{j}} = \frac{f_j + l_j}{2}
+\end{equation}\]</span></p>
+<p>Substituting this into equation <span class="math inline">\(\eqref{eq:vdp_W2}\)</span> gives</p>
+<p><span class="math display">\[\begin{equation} \label{eq:mix}
+y_{ij} = \beta_{02} + \beta_w a_{ij} + (\beta_b-\beta_w) \frac{f_j + l_j}{2} + e_{ij}
+\end{equation}\]</span></p>
+<p>As a first step lets assume there is no variation in AFR and all indidivuals are observed from age 1. we can then arrange equation <span class="math inline">\(\eqref{eq:mix}\)</span> as</p>
+<p><span class="math display">\[\begin{equation} \label{eq:mix2}
+y_{ij} = \beta_{02} + \frac{(\beta_b-\beta_w)}{2} + \beta_w a_{ij} +  \frac{(\beta_b-\beta_w)}{2} l_j + e_{ij}
+\end{equation}\]</span></p>
+<p>This shows how the coefficients in equations <span class="math inline">\(\eqref{eq:vdp_V}\)</span> and <span class="math inline">\(\eqref{eq:vdp_W2}\)</span> link to each other</p>
+<p><span class="math display">\[\begin{align}
+\beta_{01} = &amp; \beta_{02} + \frac{(\beta_b-\beta_w)}{2}\\
+\beta_a = &amp; \beta_w\\
+\beta_l = &amp; \frac{(\beta_b-\beta_w)}{2} \label{eq:beta_l}
+\end{align}\]</span></p>
+<p>We may want to think about this in terms of how the van de Pol &amp; Wright equation link to the Van de Pol &amp; Verhulst ones. First the coefficients linked with either <span class="math inline">\((a_{ij} - \bar{a_{j}})\)</span> or <span class="math inline">\(a_{ij}\)</span> (i.e. <span class="math inline">\(\beta_w\)</span> and <span class="math inline">\(\beta_a\)</span>) are equivalent in all equations. We can then rearrange these to show that in equation <span class="math inline">\(\eqref{eq:vdp_W1}\)</span> <span class="math inline">\(\beta_b = 2\beta_l + \beta_a\)</span> and in equation <span class="math inline">\(\eqref{eq:vdp_W2}\)</span> <span class="math inline">\((\beta_b-\beta_w) = 2\beta_l\)</span></p>
+<p>This comparison highlights that the selective disappearance term in equation <span class="math inline">\(\eqref{eq:vdp_V}\)</span> is the <em>additional</em> effect of selective disappearance. Equally, <span class="math inline">\(\beta_b\)</span> in equation <span class="math inline">\(\eqref{eq:vdp_W1}\)</span> cannot be interpreted in the same way as <span class="math inline">\(\beta_l\)</span> in equation <span class="math inline">\(\eqref{eq:vdp_V}\)</span> (we need to see how often this is done).</p>
+<div id="demonstrating-this-with-simulations" class="section level2">
+<h2>Demonstrating this with simulations</h2>
+<pre class="r"><code>## simulate geometrically distributed lifespans
+lifespans &lt;- rgeom(1000,0.3)+1
+
+## make into long format
+dat &lt;- data.frame(
+    id=rep(1:1000,lifespans),
+    age=c(sapply(lifespans, function(x) 1:x),recursive=TRUE),
+    longevity = rep(lifespans,lifespans)
+)
+
+## simulate phenotype
+dat$y &lt;- dat$age*-0.1 + rnorm(nrow(dat),0,2)
+
+## generate mean age and age deviation
+age_bar &lt;- tapply(dat$age,dat$id,mean)
+dat$age_bar &lt;- age_bar[match(dat$id,names(age_bar))]
+dat$age_dev &lt;- dat$age - dat$age_bar
+
+mod_l&lt;-coef(lm(y~age+longevity,dat))
+mod_c&lt;-coef(lm(y~age_dev+age_bar,dat))
+mod_c2&lt;-coef(lm(y~age+age_bar,dat))
+rbind(mod_l,mod_c,mod_c2)</code></pre>
+<pre><code>##        (Intercept)        age   longevity
+## mod_l  -0.04163795 -0.1035125  0.01469822
+## mod_c  -0.05633617 -0.1035125 -0.07411607
+## mod_c2 -0.05633617 -0.1035125  0.02939643</code></pre>
+<p>From the van de Pol and Verhulst model (mod_l) we can get back the coefficents for the other models</p>
+<pre class="r"><code>##  mod_c and mod_c2 intercept
+mod_l[1] - mod_l[3]</code></pre>
+<pre><code>## (Intercept) 
+## -0.05633617</code></pre>
+<pre class="r"><code>##  mod_c mean age slope
+mod_l[3]*2 + mod_l[2]</code></pre>
+<pre><code>##   longevity 
+## -0.07411607</code></pre>
+<pre class="r"><code>## mod_c2 mean age slope
+mod_l[3]*2</code></pre>
+<pre><code>##  longevity 
+## 0.02939643</code></pre>
+<p>This shows that the coefficients for selective disappearance from equation <span class="math inline">\(\eqref{eq:vdp_V}\)</span>, can be quite different from the effect associated with mean age in equation <span class="math inline">\(\eqref{eq:vdp_W1}\)</span></p>
+</div>
+</div>
+<div id="incorporating-both-selective-appearance-and-disappearance" class="section level1">
+<h1>Incorporating both selective appearance and disappearance</h1>
+<p>The above applies if there is only selective appearance or disappearance, but if there is both, then it is more complicated. In this case, the mean age effect is trying to capture the variance explained by <span class="math inline">\(\beta_f f_j + \beta_l l_j\)</span>.</p>
+<p>What the mean age term captures is now linked to the covariance between mean age and <span class="math inline">\(\beta_f f_j + \beta_l l_j\)</span>. We can think about this in terms of a missing predictor; the coefficient for <span class="math inline">\(x_1\)</span> when <span class="math inline">\(x_2\)</span> is missing (<span class="math inline">\(\hat{\beta_{1}}\)</span>) is</p>
+<p><span class="math display">\[\begin{equation} \label{eq:missing}
+\hat{\beta_{1}} = \beta_{1} + \beta_{2} \frac{cov(x_1,x_2)}{var(x_1)}
+\end{equation}\]</span></p>
+<p>Assuming there is no independent effect of mean age over that of FR and LR (<span class="math inline">\(\beta_{\bar{a}} = 0\)</span>), then the mean age effect in equation <span class="math inline">\(\eqref{eq:vdp_W2}\)</span> is</p>
+<p><span class="math display">\[\begin{equation} \label{eq:missing2}
+\hat{\beta_{\bar{a}}} = \beta_{l} \frac{cov(2\bar{a},l)}{var(\bar{a})} + \beta_{f} \frac{cov(\bar{a},f)}{var(\bar{a})}
+\end{equation}\]</span></p>
+<p>Substituting in equation <span class="math inline">\(\eqref{eq:mean_age}\)</span>, and rearranging gives: <span class="math display">\[\begin{equation} \label{eq:missing3}
+\hat{\beta_{\bar{a}}} = \beta_{l} \frac{cov(\frac{f + l}{2},l)}{var(\frac{f + l}{2})} + \beta_{f} \frac{cov(\frac{f + l}{2},f)}{var(\frac{f + l}{2})}
+\end{equation}\]</span></p>
+<p><span class="math display">\[\begin{equation} 
+\hat{\beta_{\bar{a}}} = \frac{\frac{1}{2}\beta_{l} cov(f + l,l) + \frac{1}{2}\beta_{f} cov(f + l,f)}{\frac{1}{4}var(f + l)}
+\end{equation}\]</span></p>
+<p><span class="math display">\[\begin{equation} 
+\hat{\beta_{\bar{a}}} = 2\frac{\beta_{l} (cov(f ,l) + var(l)) + \beta_{f} (cov(f,l)+ var(f))}{var(f) + var(l) + 2cov(f ,l))}
+\end{equation}\]</span></p>
+<p><span class="math display">\[\begin{equation} 
+\hat{\beta_{\bar{a}}} = 2\frac{(\beta_{l}+\beta_{f}) cov(f ,l) + \beta_{l}var(l) + \beta_{f} var(f)}{var(f) + var(l) + 2cov(f ,l))}
+\end{equation}\]</span></p>
+<p>This is a more general statement than above (equation <span class="math inline">\(\eqref{eq:beta_l}\)</span>). If there is no variation in AFR then</p>
+<p><span class="math display">\[\begin{equation} 
+\hat{\beta_{\bar{a}}} = \frac{ 2\beta_{l} var(l) }{var(l)} = 2\beta_{l}
+\end{equation}\]</span></p>
+<p>and we return equation <span class="math inline">\(\eqref{eq:beta_l}\)</span>. If there is variation in AFR but no effect (i.e. no selective appearance), then the variance in AFR will affect the mean age effect.</p>
+<p><span class="math display">\[\begin{equation} 
+\hat{\beta_{\bar{a}}} = 2\frac{\beta_{l} cov(f ,l) + \beta_{l}var(l) }{var(f) + var(l) + 2cov(f ,l))}
+\end{equation}\]</span></p>
+<p>I think the take home here is that a mean age effect will include both selective appearance and disappearance. Again the age or age deviation effects between the three models are not affected, and so any way of modelling will give the correct within individual age effects</p>
+<div id="more-demonstrations-with-simulations" class="section level2">
+<h2>More demonstrations with simulations</h2>
+<pre class="r"><code>n=1000
+AFR &lt;- rpois(n,3)+1
+repro_lifespans &lt;- rpois(n,3)+1#rgeom(n,0.3)+1
+LR &lt;- AFR + repro_lifespans -1
+
+beta_a &lt;- -0.1
+beta_l &lt;- 0.2
+beta_f &lt;- 0.5
+
+dat&lt;-data.frame(
+    id=rep(1:n,repro_lifespans),
+    age=c(sapply(1:n, function(x) AFR[x]:LR[x]),recursive=TRUE),
+    FR = rep(AFR,repro_lifespans),
+    LR = rep(LR,repro_lifespans)
+)
+dat$y &lt;- dat$age*beta_a + dat$LR*beta_l + dat$FR*beta_f + rnorm(nrow(dat),0,0.5)
+age_bar &lt;- tapply(dat$age,dat$id,mean)
+dat$age_bar &lt;- age_bar[match(dat$id,names(age_bar))]
+dat$age_dev &lt;- dat$age - dat$age_bar
+
+mod_func &lt;- function(formula) c(coef(lm(formula,dat)),Vr=summary(lm(formula,dat))$sigma^2)
+list(
+    mod_a = mod_func(y~age),
+    mod_l = mod_func(y~age+LR),
+    mod_f = mod_func(y~age+FR),
+    mod_fl = mod_func(y~age+FR+LR),
+    mod_c = mod_func(y~age_dev+age_bar),
+    mod_c2 = mod_func(y~age+age_bar)
+    )</code></pre>
+<pre><code>## $mod_a
+## (Intercept)         age          Vr 
+##   1.0639057   0.3222054   0.8828282 
+## 
+## $mod_l
+## (Intercept)         age          LR          Vr 
+##  0.09723526  0.06488684  0.31924042  0.60730119 
+## 
+## $mod_f
+## (Intercept)         age          FR          Vr 
+##  0.54696196  0.01157383  0.58370686  0.35152541 
+## 
+## $mod_fl
+## (Intercept)         age          FR          LR          Vr 
+##  0.02722043 -0.10194725  0.49994505  0.19614148  0.25844367 
+## 
+## $mod_c
+## (Intercept)     age_dev     age_bar          Vr 
+##  -0.1765530  -0.1019473   0.5319659   0.3206523 
+## 
+## $mod_c2
+## (Intercept)         age     age_bar          Vr 
+##  -0.1765530  -0.1019473   0.6339132   0.3206523</code></pre>
+<pre class="r"><code>    mod_fl = mod_func(y~age+FR+LR)
+# derivew the mod_c2 mean age slope from mod_fl
+2* (mod_fl[&quot;LR&quot;]*(cov(dat$FR,dat$LR)+var(dat$LR)) + mod_fl[&quot;FR&quot;]*(cov(dat$FR,dat$LR)+var(dat$FR))) / (var(dat$LR) + var(dat$FR) + 2*cov(dat$FR,dat$LR))</code></pre>
+<pre><code>##        LR 
+## 0.6339132</code></pre>
+</div>
+</div>
+<div id="what-is-estimated-in-the-age-only-model" class="section level1">
+<h1>What is estimated in the age only model</h1>
+<p>From <span class="math inline">\(\eqref{eq:missing}\)</span>, we can see that when</p>
+<pre class="r"><code>mod_c2 = mod_func(y~age+age_bar)
+mod_c2[&quot;age&quot;]+ mod_c2[&quot;age_bar&quot;]*cov(dat$age,dat$age_bar)/var(dat$age)</code></pre>
+<pre><code>##       age 
+## 0.3222054</code></pre>
+<pre class="r"><code>mod_c2[&quot;age&quot;]+ mod_c2[&quot;age_bar&quot;]*var(dat$age_bar)/var(dat$age)</code></pre>
+<pre><code>##       age 
+## 0.3222054</code></pre>
+<pre class="r"><code>## or 
+    
+    mod_fl = mod_func(y~age+FR+LR)
+mod_fl[&quot;age&quot;]+ mod_fl[&quot;LR&quot;]*cov(dat$age,dat$LR)/var(dat$age)+ mod_fl[&quot;FR&quot;]*cov(dat$age,dat$FR)/var(dat$age)</code></pre>
+<pre><code>##       age 
+## 0.3222054</code></pre>
+</div>
+<div id="van-de-pol-verhulst-with-a-missing-term" class="section level1">
+<h1>Van de Pol &amp; Verhulst with a missing term</h1>
+<p>It seems likely that both AFR and LR are not always modelled in systems where they both vary, and so may have an effect. It is also likely that they are correlated: as lifespan = AFR + reproductive years, AFR and lifespan would be correlated, unless AFR and reproductive years are negatively correlated. I could well imagine there being variation in AFR, and then a given survival rate post AFR. If this was the case then AFR and lifespan would be correlated. (Maybe we could look at this in a couple of systems?)</p>
+<p>From equation <span class="math inline">\(\eqref{eq:missing}\)</span>, we can see that if only one appearance/disappearance term is modelled, and they are correlated, then any effect of the unmodelled term will be picked up to some extent by the modelled terms. For example, the LR slope in the absence of an unmodelled FR effect:</p>
+<p><span class="math display">\[\begin{equation} \label{eq:missing_f}
+\hat{\beta_{l}} = \beta_{l} + \beta_{f} \frac{cov(l,f)}{var(l)}
+\end{equation}\]</span></p>
+<p>As selective appearance and disappearance will both mask age effects, the age effect will not be fully corrected for if one term is missing (see mod_l and mod_f in simulated example above).</p>
+<p><span class="math display">\[\begin{equation} \label{eq:missing_f2}
+\hat{\beta_{a}} = \beta_{a} + \beta_{f} \frac{cov(a,f)}{var(l)}
+\end{equation}\]</span></p>
+<p>These dont work - its a more complex because one predictor is missing with two correalted predictors still in the model.</p>
+<!-- a varied at the level of the observation, and f at the level of the individual, I wonder if its to do with the covariance with mean age  -->
+<pre class="r"><code>n=1000
+AFR &lt;- rpois(n,3)+1
+repro_lifespans &lt;- rpois(n,3)+1#rgeom(n,0.3)+1
+LR &lt;- AFR + repro_lifespans -1
+
+beta_a &lt;- -0.1
+beta_l &lt;- 0.2
+beta_f &lt;- 0.5
+
+dat&lt;-data.frame(
+    id=rep(1:n,repro_lifespans),
+    age=c(sapply(1:n, function(x) AFR[x]:LR[x]),recursive=TRUE),
+    FR = rep(AFR,repro_lifespans),
+    LR = rep(LR,repro_lifespans)
+)
+dat$y &lt;- dat$age*beta_a + dat$LR*beta_l + dat$FR*beta_f + rnorm(nrow(dat),0,0.5)
+age_bar &lt;- tapply(dat$age,dat$id,mean)
+dat$age_bar &lt;- age_bar[match(dat$id,names(age_bar))]
+dat$age_dev &lt;- dat$age - dat$age_bar
+
+
+list(
+    mod_a = mod_func(y~age),
+    mod_l = mod_func(y~age+LR),
+    mod_f = mod_func(y~age+FR),
+    mod_fl = mod_func(y~age+FR+LR)
+    )</code></pre>
+<pre><code>## $mod_a
+## (Intercept)         age          Vr 
+##   1.0255091   0.3296170   0.8577613 
+## 
+## $mod_l
+##  (Intercept)          age           LR           Vr 
+## -0.009163959  0.047834054  0.348287119  0.551926071 
+## 
+## $mod_f
+## (Intercept)         age          FR          Vr 
+## 0.487824065 0.007005883 0.608138411 0.339609556 
+## 
+## $mod_fl
+## (Intercept)         age          FR          LR          Vr 
+## -0.01921707 -0.10041277  0.50227393  0.20218518  0.25224372</code></pre>
+<pre class="r"><code>## expected LR slope when FR is not modelled 
+
+mod_fl[&quot;LR&quot;]+ mod_fl[&quot;FR&quot;]*cov(dat$FR,dat$LR)/var(dat$LR)</code></pre>
+<pre><code>##        LR 
+## 0.4532954</code></pre>
+</div>
+<div id="when-some-ages-are-missing---sampling-error-in-mean-age-effect" class="section level1">
+<h1>When some ages are missing - sampling error in mean age effect</h1>
+</div>
 
 
 
